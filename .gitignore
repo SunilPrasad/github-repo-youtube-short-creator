@@ -3,6 +3,7 @@
 
 # Pipeline outputs
 outputs/
+outputs_1/
 
 # Python
 __pycache__/

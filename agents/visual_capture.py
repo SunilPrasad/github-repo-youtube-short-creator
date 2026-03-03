@@ -49,25 +49,43 @@ def _html_escape(text: str) -> str:
 
 
 def _extract_features(repo: RepoData, script: VideoScript) -> list[str]:
-    """Extract 4–6 bullet-point features for the feature card."""
+    """Extract 3–6 bullet-point features for the feature card."""
     features: list[str] = []
 
-    # From README feature sections
-    for section in repo.readme_sections:
-        if section.category == "features":
-            for line in section.content_text.splitlines():
-                line = line.strip(" -•*◆→►▸▹●○")
-                if 10 < len(line) < 120:
-                    features.append(line)
-
-    # From script features section
-    if len(features) < 3:
-        for sec in script.sections:
-            if sec.id == "features":
+    # 1. Script features section — prefer pipe-separated format produced by LLM
+    for sec in script.sections:
+        if sec.id == "features":
+            if "|" in sec.text:
+                for part in sec.text.split("|"):
+                    part = part.strip(" •-*")
+                    if 5 < len(part) < 120:
+                        features.append(part)
+            else:
                 for sent in re.split(r"[.!?]", sec.text):
                     sent = sent.strip()
                     if 10 < len(sent) < 120:
                         features.append(sent)
+
+    # 2. README feature sections (bullet points under a "Features" heading)
+    if len(features) < 3:
+        for section in repo.readme_sections:
+            if section.category == "features":
+                for line in section.content_text.splitlines():
+                    line = line.strip(" -•*◆→►▸▹●○")
+                    if 10 < len(line) < 120:
+                        features.append(line)
+
+    # 3. Broader fallback — mine bullet lines from any README section
+    if len(features) < 3:
+        for section in repo.readme_sections:
+            for line in section.content_text.splitlines():
+                stripped = line.strip()
+                if stripped.startswith(("-", "•", "*", "◆", "►", "▸", "●", "○")):
+                    clean = stripped.strip(" -•*◆→►▸▹●○")
+                    if 15 < len(clean) < 100 and not clean.endswith(":"):
+                        features.append(clean)
+            if len(features) >= 6:
+                break
 
     # Deduplicate and limit
     seen: set[str] = set()
@@ -78,7 +96,16 @@ def _extract_features(repo: RepoData, script: VideoScript) -> list[str]:
             seen.add(key)
             unique.append(f)
 
-    return unique[:6] if unique else ["See the README for full feature list."]
+    if unique:
+        return unique[:6]
+
+    # Last resort: build from description + topics
+    fallback: list[str] = []
+    if repo.description:
+        fallback.append(repo.description[:80])
+    for topic in repo.topics[:3]:
+        fallback.append(topic.replace("-", " ").title())
+    return fallback[:4] if fallback else ["Open source", "Easy to use", "Well documented", "Active community"]
 
 
 FEATURE_ICONS = ["⚡", "🔒", "🚀", "🎯", "🔧", "💡", "🌐", "📦"]
@@ -250,6 +277,17 @@ async def _generate_cards(
     return assets
 
 
+# ── Mobile emulation constants ────────────────────────────────────────────────
+
+_MOBILE_VIEWPORT_W = 390
+_MOBILE_VIEWPORT_H = 844
+_MOBILE_SCALE = 3
+_MOBILE_UA = (
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) "
+    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
+)
+
+
 # ── Part A: GitHub Screenshots ────────────────────────────────────────────────
 
 async def _screenshot_github(
@@ -259,8 +297,11 @@ async def _screenshot_github(
 ) -> list[VisualAsset]:
     assets: list[VisualAsset] = []
     page = await browser.new_page(
-        viewport={"width": 1280, "height": 900},
-        device_scale_factor=2,
+        viewport={"width": _MOBILE_VIEWPORT_W, "height": _MOBILE_VIEWPORT_H},
+        user_agent=_MOBILE_UA,
+        is_mobile=True,
+        has_touch=True,
+        device_scale_factor=_MOBILE_SCALE,
     )
 
     try:
@@ -273,10 +314,10 @@ async def _screenshot_github(
         hook_raw = str(captures_dir / "github_hook_raw.png")
         hook_processed = str(captures_dir / "github_hook.png")
         try:
-            # Capture top 820px — shows repo name, description, stars, language, topics
+            # Capture top portion — shows repo name, description, stars, language, topics
             await page.screenshot(
                 path=hook_raw,
-                clip={"x": 0, "y": 0, "width": 1280, "height": 820},
+                clip={"x": 0, "y": 0, "width": _MOBILE_VIEWPORT_W, "height": 700},
             )
             process_screenshot(hook_raw, hook_processed)
             # Add URL badge overlay on top
@@ -313,7 +354,7 @@ async def _screenshot_github(
                                 bottom = Math.max(bottom, r.bottom + window.scrollY);
                                 el = el.nextElementSibling;
                             }
-                            return {x: 0, y: top, width: 1280, height: Math.min(bottom - top, 800)};
+                            return {x: 0, y: top, width: window.innerWidth, height: Math.min(bottom - top, 800)};
                         }""",
                         heading,
                     )
@@ -393,7 +434,7 @@ async def _screenshot_github(
             else:
                 await page.screenshot(
                     path=file_tree_path,
-                    clip={"x": 0, "y": 300, "width": 1280, "height": 500},
+                    clip={"x": 0, "y": 300, "width": _MOBILE_VIEWPORT_W, "height": 500},
                 )
             processed = str(captures_dir / "file_tree_proc.png")
             process_screenshot(file_tree_path, processed)

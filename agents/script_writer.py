@@ -115,6 +115,8 @@ FULL SCRIPT RULES
 - Every sentence must add new information — no padding
 - Use concrete numbers everywhere (stars, models, milliseconds, lines of code)
 - End with a punchy CTA that tells viewers exactly what to do
+- features: write EXACTLY 3–4 short phrases separated by " | " — NOT sentences, just punchy labels
+  Example: "Runs 50+ models locally | Zero API costs | Full REST API | Works on Mac, Linux, Windows"
 
 OUTPUT FORMAT:
 Return ONLY a JSON object with exactly these 6 keys — no markdown, no explanation:
@@ -122,7 +124,7 @@ Return ONLY a JSON object with exactly these 6 keys — no markdown, no explanat
   "hook": "...",
   "what_is_it": "...",
   "how_it_works": "...",
-  "features": "...",
+  "features": "short phrase | short phrase | short phrase | short phrase",
   "usage": "...",
   "cta": "..."
 }
@@ -204,8 +206,13 @@ def _template_script(repo: RepoData) -> dict[str, str]:
                 line = line.strip(" -•*")
                 if len(line) > 10:
                     features.append(line)
-    feature_lines = features[:3] if features else ["Check the README for details."]
-    feature_text = " ".join(feature_lines)
+    feature_lines = features[:4] if features else [
+        "Open source & free",
+        f"Built with {repo.language}" if repo.language else "Easy to use",
+        "Active community",
+        "Well documented",
+    ]
+    feature_text = " | ".join(feature_lines)
 
     how_text = ""
     for section in repo.readme_sections:
