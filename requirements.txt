@@ -1,0 +1,34 @@
+# GitHub-to-YouTube-Shorts Pipeline — Python Dependencies
+# Install: pip install -r requirements.txt
+# Then:    playwright install chromium
+# System:  ffmpeg and ffprobe must be installed and on PATH
+
+# HTTP (async)
+httpx>=0.27.0
+
+# HTML/Markdown parsing
+markdown>=3.6
+beautifulsoup4>=4.12.0
+
+# LLM providers (install both, use whichever you have keys for)
+anthropic>=0.40.0
+openai>=1.50.0
+
+# Text-to-Speech
+elevenlabs>=1.9.0
+edge-tts>=6.1.9
+
+# Browser automation
+playwright>=1.47.0
+
+# Image processing
+Pillow>=10.4.0
+
+# Data models
+pydantic>=2.9.0
+
+# Configuration
+pyyaml>=6.0.2
+
+# .env file loading
+python-dotenv>=1.0.0

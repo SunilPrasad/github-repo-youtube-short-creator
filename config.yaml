@@ -1,0 +1,63 @@
+# GitHub-to-YouTube-Shorts Pipeline Configuration
+
+# ── LLM Provider ──────────────────────────────────────────────────────────────
+llm:
+  provider: "openai"                         # "anthropic" or "openai"
+  anthropic_model: "claude-sonnet-4-20250514"
+  openai_model: "gpt-4o"
+
+# ── Voice / TTS ───────────────────────────────────────────────────────────────
+voice:
+  # ElevenLabs (primary — requires ELEVENLABS_API_KEY environment variable)
+  # Voice ID is NOT the voice name. It's a unique string identifier.
+  # How to find your Voice ID:
+  #   ElevenLabs Dashboard → Voices → click any voice → copy "Voice ID"
+  # Works with custom and cloned voices too — just paste their ID here.
+  # Examples:
+  #   "21m00Tcm4TlvDq8ikWAM"  → Rachel (warm, professional)
+  #   "ErXwobaYiN019PkySvjV"  → Antoni (well-rounded)
+  #   "EXAVITQu4vr4xnSDxMaL"  → Bella (soft)
+  #   "AZnzlk1XvdvUeBnXmlld"  → Domi (strong)
+  elevenlabs_voice_id: "21m00Tcm4TlvDq8ikWAM"   # ← REPLACE with your Voice ID
+  elevenlabs_model_id: "eleven_multilingual_v2"   # Best quality. Alt: "eleven_turbo_v2_5"
+  elevenlabs_stability: 0.5          # 0.0–1.0 (lower = more expressive, higher = more stable)
+  elevenlabs_similarity_boost: 0.75  # 0.0–1.0 (higher = closer to original voice)
+  elevenlabs_style: 0.0              # 0.0–1.0 (style exaggeration, v2 models only)
+  elevenlabs_speaker_boost: true     # Enhances speaker clarity
+
+  # edge-tts (fallback — completely free, no API key required)
+  edge_tts_voice: "en-US-AndrewMultilingualNeural"
+  edge_tts_rate: "+0%"
+  edge_tts_pitch: "+0Hz"
+
+# ── Video ─────────────────────────────────────────────────────────────────────
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  crf: 18                # Lower = better quality (18=high, 23=medium, 28=low)
+  max_duration_seconds: 60
+  transition_duration: 0.3
+  zoom_intensity: 0.15   # Ken Burns zoom amount (0.10–0.20 recommended)
+
+# ── Visuals ───────────────────────────────────────────────────────────────────
+visuals:
+  background_color: [15, 15, 35]    # RGB — deep dark navy
+  accent_color: "#667eea"            # Purple-blue accent
+  screenshot_padding: 60             # Pixels of padding around screenshots
+  corner_radius: 20                  # Rounded corner radius in pixels
+  github_dark_mode: true             # Use GitHub dark theme for screenshots
+
+# ── Script ────────────────────────────────────────────────────────────────────
+script:
+  min_words: 80
+  max_words: 160
+  target_words: 130
+
+# ── Subtitles ─────────────────────────────────────────────────────────────────
+subtitles:
+  font_size: 48
+  words_per_chunk: 5
+  position_from_bottom: 200    # Pixels — avoids YouTube Shorts UI overlay
+  font_color: "white"
+  background_opacity: 0.5
