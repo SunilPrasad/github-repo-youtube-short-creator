@@ -16,7 +16,7 @@ import re
 from pathlib import Path
 
 from models.schemas import RepoData, VideoScript, VoiceOutput, VisualAsset, VisualPlan
-from utils.image_processing import ensure_vertical, process_screenshot
+from utils.image_processing import add_github_url_overlay, ensure_vertical, process_screenshot
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +160,7 @@ async def _generate_cards(
                 id="card_title",
                 path=title_path,
                 source_type="generated_card",
-                mapped_section="hook",
+                mapped_section="what_is_it",
                 description="Title card with repo name and stats",
                 width=1080, height=1920,
             ))
@@ -269,27 +269,29 @@ async def _screenshot_github(
         await page.goto(repo.html_url, wait_until="networkidle", timeout=30000)
         await asyncio.sleep(2)
 
-        # 1. Repo header
-        header_path = str(captures_dir / "repo_header.png")
+        # 1. GitHub full-page hook screenshot (ALWAYS first — reliable clip, no fragile selectors)
+        hook_raw = str(captures_dir / "github_hook_raw.png")
+        hook_processed = str(captures_dir / "github_hook.png")
         try:
-            header = await page.query_selector('[data-hpc], .repository-content header, .gh-header-main')
-            if header:
-                await header.screenshot(path=header_path)
-            else:
-                await page.screenshot(path=header_path, clip={"x": 0, "y": 0, "width": 1280, "height": 500})
-            processed = str(captures_dir / "repo_header_processed.png")
-            process_screenshot(header_path, processed)
+            # Capture top 820px — shows repo name, description, stars, language, topics
+            await page.screenshot(
+                path=hook_raw,
+                clip={"x": 0, "y": 0, "width": 1280, "height": 820},
+            )
+            process_screenshot(hook_raw, hook_processed)
+            # Add URL badge overlay on top
+            add_github_url_overlay(hook_processed, hook_processed, repo.full_name)
             assets.append(VisualAsset(
-                id="screenshot_header",
-                path=processed,
+                id="screenshot_github_hook",
+                path=hook_processed,
                 source_type="screenshot",
-                mapped_section="what_is_it",
-                description="GitHub repo header with name, description, stats",
+                mapped_section="hook",
+                description=f"GitHub page: {repo.full_name}",
                 width=1080, height=1920,
             ))
-            logger.info("Captured repo header.")
+            logger.info("Captured GitHub hook screenshot with URL overlay.")
         except Exception as exc:
-            logger.warning("Repo header screenshot failed: %s", exc)
+            logger.warning("GitHub hook screenshot failed: %s", exc)
 
         # 2. README sections
         try:

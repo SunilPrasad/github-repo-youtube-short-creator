@@ -109,6 +109,78 @@ def process_screenshot(
     canvas_rgba.convert("RGB").save(output_path, "PNG")
 
 
+def add_github_url_overlay(
+    image_path: str,
+    output_path: str,
+    full_name: str,
+) -> None:
+    """
+    Add a styled GitHub URL badge to a processed 1080×1920 screenshot.
+    Draws a browser-bar-style pill at the top showing 'github.com/owner/repo'.
+    """
+    from PIL import ImageFont
+
+    img = Image.open(image_path).convert("RGBA")
+    draw = ImageDraw.Draw(img)
+
+    url_text = f"github.com/{full_name}"
+
+    # Badge dimensions
+    badge_h = 72
+    badge_y = 48
+    badge_x0 = 60
+    badge_x1 = CANVAS_W - 60
+    badge_radius = badge_h // 2
+
+    # Badge background — semi-transparent dark with a subtle border
+    overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    od.rounded_rectangle(
+        [badge_x0, badge_y, badge_x1, badge_y + badge_h],
+        radius=badge_radius,
+        fill=(10, 10, 20, 210),
+    )
+    od.rounded_rectangle(
+        [badge_x0, badge_y, badge_x1, badge_y + badge_h],
+        radius=badge_radius,
+        outline=(102, 126, 234, 180),
+        width=2,
+    )
+    img = Image.alpha_composite(img, overlay)
+    draw = ImageDraw.Draw(img)
+
+    # GitHub logo dot  ●  before URL
+    dot_x = badge_x0 + 30
+    dot_y = badge_y + badge_h // 2
+    dot_r = 8
+    draw.ellipse(
+        [dot_x - dot_r, dot_y - dot_r, dot_x + dot_r, dot_y + dot_r],
+        fill=(102, 126, 234, 255),
+    )
+
+    # URL text — try to load a font, fall back to default
+    font_size = 32
+    font = None
+    for font_path in [
+        "C:/Windows/Fonts/consola.ttf",
+        "C:/Windows/Fonts/cour.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+    ]:
+        try:
+            font = ImageFont.truetype(font_path, font_size)
+            break
+        except (IOError, OSError):
+            continue
+    if font is None:
+        font = ImageFont.load_default()
+
+    text_x = dot_x + dot_r + 16
+    text_y = badge_y + (badge_h - font_size) // 2 - 2
+    draw.text((text_x, text_y), url_text, fill=(200, 210, 255, 255), font=font)
+
+    img.convert("RGB").save(output_path, "PNG")
+
+
 def ensure_vertical(image_path: str, output_path: str | None = None) -> str:
     """
     Ensure image is 1080×1920 (vertical/portrait).

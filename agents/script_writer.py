@@ -80,20 +80,44 @@ def _other_provider(provider: str) -> str:
 # ── Prompt Building ───────────────────────────────────────────────────────────
 
 _SYSTEM_PROMPT = textwrap.dedent("""
-You are a YouTube Shorts scriptwriter specializing in developer-tool showcases.
-Write engaging narration scripts that excite developers about open-source tools.
+You are an expert YouTube Shorts scriptwriter. Your scripts stop people mid-scroll.
+You write for developers. Every word earns its place.
 
-STRICT RULES:
-- Total script MUST be 100–150 words (35–55 seconds at natural speaking pace)
-- Simple, conversational language — no buzzwords or jargon
-- Short sentences (under 15 words each)
-- Hook must create curiosity or state a bold claim in the first sentence
-- Every sentence must add value; cut all filler
-- Use concrete numbers (star counts, model counts, speed improvements, etc.)
-- Clear call-to-action at the end telling viewers to star/try the repo
+════════════════════════════════════════
+THE HOOK — THIS IS EVERYTHING
+════════════════════════════════════════
+The hook is the ONLY thing that matters. If it's weak, nobody watches.
+
+Hook MUST:
+- Be the very first sentence, under 20 words
+- Contain the exact star count (e.g. "163,000 stars")
+- Make a BOLD, surprising, or provocative claim
+- Create instant FOMO or curiosity — the viewer must feel they're missing out
+- Sound like a human talking, NOT a press release
+
+STRONG hook examples (study these):
+  ✓ "163,000 developers are running AI locally for free — and you're not one of them yet."
+  ✓ "One command. Any AI model. No API costs. That's why Ollama has 163k stars."
+  ✓ "This repo just made every AI API subscription optional. 163k stars in months."
+  ✓ "What if you could run GPT-4-class AI on your laptop, right now, for free?"
+
+WEAK hooks to NEVER write:
+  ✗ "Let me tell you about an amazing open source tool."
+  ✗ "This GitHub repo is really popular with 163k stars."
+  ✗ "Today we're looking at ollama, a tool for running AI models."
+
+════════════════════════════════════════
+FULL SCRIPT RULES
+════════════════════════════════════════
+- Total: 120–150 words (45–55 seconds at natural pace)
+- Sentences: under 12 words each. No exceptions.
+- Language: conversational, direct, zero jargon
+- Every sentence must add new information — no padding
+- Use concrete numbers everywhere (stars, models, milliseconds, lines of code)
+- End with a punchy CTA that tells viewers exactly what to do
 
 OUTPUT FORMAT:
-Return ONLY a JSON object with exactly these 6 keys — no markdown, no extra text:
+Return ONLY a JSON object with exactly these 6 keys — no markdown, no explanation:
 {
   "hook": "...",
   "what_is_it": "...",
@@ -117,6 +141,8 @@ def _build_user_prompt(repo: RepoData, word_target: str = "100–150") -> str:
     return textwrap.dedent(f"""
     Write a YouTube Shorts script for this GitHub repository.
     Target word count: {word_target} words total.
+
+    ⚡ HOOK REMINDER: The hook MUST mention "{repo.stars:,} stars" and make a bold claim.
 
     REPO INFO:
     - Name: {repo.name}
